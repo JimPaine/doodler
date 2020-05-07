@@ -5,7 +5,7 @@
 @inject IJSRuntime JsRuntime
 
 <div class="container h-100">
-    <div class="row h-100">
+    <div class="row h-75">
         <div id="canvaswrapper" class="col-md-12 h-75" @ref="wrapper">
             <canvas id="doodlepad" class="border p-0 m-0"
                 @onmousedown="OnMouseDown"
@@ -16,7 +16,28 @@
             </canvas>
         </div>
     </div>
+    <div class="row">
+        <div class="btn-toolbar" role="toolbar" aria-label="button tool bar for managing pen and brush settings">
+            <div class="btn-group mr-2" role="group" aria-label="button group for pen color">
+                <button @onclick='e => OnColorSelect("red")' type="button" class="btn btn-secondary text-danger bg-danger">R</button>
+                <button @onclick='e => OnColorSelect("blue")' type="button" class="btn btn-secondary text-primary bg-primary">B</button>
+                <button @onclick='e => OnColorSelect("green")' type="button" class="btn btn-secondary text-success bg-success">G</button>
+                <button @onclick='e => OnColorSelect("yellow")' type="button" class="btn btn-secondary text-warning bg-warning">Y</button>
+                <button @onclick='e => OnColorSelect("grey")' type="button" class="btn btn-secondary text-secondary bg-secondary">G</button>
+                <button @onclick='e => OnColorSelect("black")' type="button" class="btn btn-secondary text-dark bg-dark">D</button>
+            </div>
+        </div>
+
+        <div class="btn-group" role="group" aria-label="button group for brush settings">
+            <button @onclick='e => OnToolSelect(1)' type="button" class="btn btn-secondary fas fa-pencil-alt"></button>            
+            <button @onclick='e => OnToolSelect(20)' type="button" class="btn btn-secondary fas fa-paint-brush"></button>         
+            <button @onclick='e => OnToolSelect(50)' type="button" class="btn btn-secondary fas fa-brush"></button>
+            <button @onclick='e => OnColorSelect("white")' type="button" class="btn btn-secondary fas fa-eraser"></button>
+            <button @onclick="OnClear" type="button" class="btn btn-secondary fas fa-trash-alt"></button>
+        </div>
+    </div>
 </div>
+
 
 @code {
     private HubConnection hubConnection;
@@ -50,6 +71,23 @@
     private bool draw = false;
     private double x;
     private double y;
+    private int strokeWidth = 1;
+    private string color = "black";
+
+    private void OnColorSelect(string color)
+    {
+        this.color = color;
+    }
+
+    private void OnToolSelect(int toolWidth)
+    {
+        this.strokeWidth = toolWidth;
+    }
+
+    private async Task OnClear(EventArgs eventArgs)
+    {
+        await this.canvasInterop.Clear();
+    }
 
     private async Task OnMouseDown(MouseEventArgs eventArgs)
     {
@@ -77,7 +115,9 @@
                 PrevX = this.x, 
                 NewX = point.x,
                 PrevY = this.y,
-                NewY = point.y
+                NewY = point.y,
+                Color = this.color,
+                StrokeWidth = this.strokeWidth
             };
 
             this.x = point.x;

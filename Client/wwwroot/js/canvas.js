@@ -1,5 +1,7 @@
 ((window) => {
     let context = null;
+    let strokeColor = "black";
+    let strokeWidth = 1;
 
     let getContext = (canvas) => {
         if (context == null) {
@@ -9,13 +11,13 @@
     };
 
     window.canvas = {
-        drawLine: (canvas, prevX, prevY, newX, newY) => {
+        drawLine: (canvas, prevX, prevY, newX, newY, strokeColor, strokeWidth) => {
 
             let context = getContext(canvas);
 
             context.lineJoin = 'round';
-            context.lineWidth = 1;
-            context.strokeStyle = "black";
+            context.lineWidth = strokeWidth;
+            context.strokeStyle = strokeColor;
             context.beginPath();
             context.moveTo(newX, newY);
             context.lineTo(prevX, prevY);
@@ -45,6 +47,11 @@
             canvas.height = wrapper.clientHeight;
             canvas.style.width = wrapper.clientWidth;
             canvas.style.height = wrapper.clientHeight;
+        },
+
+        clear: (canvas) => {
+            let context = getContext(canvas);
+            context.clearRect(0, 0, canvas.width, canvas.height);
         }
     };
 })(window);

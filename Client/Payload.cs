@@ -9,6 +9,10 @@ namespace doodler.Client
         public double PrevY { get; set; }
 
         public double NewY { get; set; }
+
+        public string Color { get; set; }
+
+        public int StrokeWidth { get; set; }
     }
 
     public class Point 

@@ -19,23 +19,30 @@ namespace doodler.Client
 
         public async Task DrawLine(Payload payload)
         {
-            await jsRuntime.InvokeAsync<object>(
+            await this.jsRuntime.InvokeAsync<object>(
                 "canvas.drawLine", 
                 this.canvas, 
                 payload.PrevX,
                 payload.PrevY,                
                 payload.NewX,
-                payload.NewY);
+                payload.NewY,
+                payload.Color,
+                payload.StrokeWidth);
         }
 
         public async Task<Point> GetOffset(double x, double y)
         {
-            return await jsRuntime.InvokeAsync<Point>("canvas.getOffset", this.canvas, x, y);
+            return await this.jsRuntime.InvokeAsync<Point>("canvas.getOffset", this.canvas, x, y);
         }
 
         public async Task SetSize()
         {
-            await jsRuntime.InvokeAsync<Point>("canvas.setSize", this.canvas, this.wrapper);
+            await this.jsRuntime.InvokeAsync<Point>("canvas.setSize", this.canvas, this.wrapper);
+        }
+
+        public async Task Clear()
+        {
+            await this.jsRuntime.InvokeAsync<object>("canvas.clear", this.canvas);
         }
     }    
 }
