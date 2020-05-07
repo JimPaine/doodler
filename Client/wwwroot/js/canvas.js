@@ -1,30 +1,50 @@
 ((window) => {
-    let canvasContextCache = {};
+    let context = null;
 
     let getContext = (canvas) => {
-        if (!canvasContextCache[canvas]) {
-            canvasContextCache[canvas] = canvas.getContext('2d');
+        if (context == null) {
+            context = canvas.getContext('2d');
         }
-        return canvasContextCache[canvas];
+        return context;
     };
 
-    window.__blazorCanvasInterop = {
-        drawLine: (canvas, sX, sY, eX, eY) => {
+    window.canvas = {
+        drawLine: (canvas, prevX, prevY, newX, newY) => {
+
             let context = getContext(canvas);
 
             context.lineJoin = 'round';
-            context.lineWidth = 5;
+            context.lineWidth = 1;
+            context.strokeStyle = "black";
             context.beginPath();
-            context.moveTo(eX, eY);
-            context.lineTo(sX, sY);
+            context.moveTo(newX, newY);
+            context.lineTo(prevX, prevY);
             context.closePath();
             context.stroke();
         },
 
-        setContextPropertyValue: (canvas, propertyName, propertyValue) => {
-            let context = getContext(canvas);
+        getOffset: (current, x, y) => {   
+                
+              let offsetLeft = 0;
+              let offsetTop = 0;            
+            
+              while(current != null){
+                offsetLeft += current.offsetLeft;
+                offsetTop += current.offsetTop;
+                current = current.offsetParent;
+              }
+            
+              return { 
+                x: x - offsetLeft,
+                y: y - offsetTop,
+              }; 
+        },
 
-            context[propertyName] = propertyValue;
+        setSize: (canvas, wrapper) => {
+            canvas.width = wrapper.clientWidth;
+            canvas.height = wrapper.clientHeight;
+            canvas.style.width = wrapper.clientWidth;
+            canvas.style.height = wrapper.clientHeight;
         }
     };
 })(window);

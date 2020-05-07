@@ -1,29 +1,33 @@
 ﻿@page "/"
+@using System.Text.Json;
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 
-<div class="container">
-    <div class="row">
-        <canvas height="400" class="border col-md-12"
-            @onmousedown="OnMouseDown"
-            @onmousemove="OnMouseMove"
-            @onmouseup="OnMouseUp"
-            @onmouseout="OnMouseOut"
-            @ref="canvas">
-        </canvas>
+<div class="container h-100">
+    <div class="row h-100">
+        <div id="canvaswrapper" class="col-md-12 h-75" @ref="wrapper">
+            <canvas id="doodlepad" class="border p-0 m-0"
+                @onmousedown="OnMouseDown"
+                @onmousemove="OnMouseMove"
+                @onmouseup="OnMouseUp"
+                @onmouseout="OnMouseOut"
+                @ref="canvas">
+            </canvas>
+        </div>
     </div>
 </div>
 
 @code {
     private HubConnection hubConnection;
+    private ElementReference canvas;    
+    private ElementReference wrapper;
+    private CanvasInterop canvasInterop;
 
-    ElementReference canvas;
-    Canvas2DContext canvasContext;
-
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        canvasContext = new Canvas2DContext(JsRuntime, canvas);
+        this.canvasInterop = new CanvasInterop(JsRuntime, canvas, wrapper);
+        await this.canvasInterop.SetSize(); 
     }
 
     protected override async Task OnInitializedAsync()
@@ -34,7 +38,7 @@
 
         this.hubConnection.On<Payload>("ReceivePayload", async (payload) =>
         {
-            await this.canvasContext.DrawLine(payload);
+            await this.canvasInterop.DrawLine(payload);
             StateHasChanged();
         });
 
@@ -47,11 +51,15 @@
     private double x;
     private double y;
 
-    private void OnMouseDown(MouseEventArgs eventArgs)
+    private async Task OnMouseDown(MouseEventArgs eventArgs)
     {
-        this.draw = true;
-        this.x = eventArgs.ClientX;
-        this.y = eventArgs.ClientY;
+        this.draw = true;        
+
+        Point point = await this.canvasInterop.GetOffset(eventArgs.ClientX, eventArgs.ClientY);
+        this.x = point.x;
+        this.y = point.y;
+
+        Console.WriteLine($"x = {this.x} y = {this.y}");
     } 
     private void OnMouseUp(MouseEventArgs eventArgs) => this.draw = false;
     private void OnMouseOut(MouseEventArgs eventArgs) => this.draw = false;
@@ -60,20 +68,23 @@
     {
         if(draw)
         {
+            Point point = await this.canvasInterop.GetOffset(eventArgs.ClientX, eventArgs.ClientY);
+
+            Console.WriteLine($"x = {this.x} y = {this.y} newX = {point.x} newY = {point.y}");
+
             Payload payload = new Payload 
             { 
-                StartX = this.x, 
-                EndX = eventArgs.ClientX,
-                StartY = this.y,
-                EndY = eventArgs.ClientY
+                PrevX = this.x, 
+                NewX = point.x,
+                PrevY = this.y,
+                NewY = point.y
             };
 
-            await this.canvasContext.DrawLine(payload);
-            
-            this.x = eventArgs.ClientX;
-            this.y = eventArgs.ClientY;
+            this.x = point.x;
+            this.y = point.y;
 
-            await this.hubConnection.SendAsync("SendPayload", payload);
+            await this.canvasInterop.DrawLine(payload);
+            await this.hubConnection.SendAsync("SendPayload", payload);            
         }
 
         await Task.CompletedTask;        

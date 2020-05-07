@@ -2,12 +2,19 @@ namespace doodler.Client
 {
     public class Payload
     {
-        public double StartX { get; set; }
+        public double PrevX { get; set; }
 
-        public double EndX { get; set; }
+        public double NewX { get; set; }
 
-        public double StartY { get; set; }
+        public double PrevY { get; set; }
 
-        public double EndY { get; set; }
+        public double NewY { get; set; }
+    }
+
+    public class Point 
+    {
+        public double x { get; set; }
+
+        public double y { get; set; }
     }
 }
