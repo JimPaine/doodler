@@ -1,0 +1,81 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+
+<div class="container">
+    <div class="row">
+        <canvas height="400" class="border col-md-12"
+            @onmousedown="OnMouseDown"
+            @onmousemove="OnMouseMove"
+            @onmouseup="OnMouseUp"
+            @onmouseout="OnMouseOut"
+            @ref="canvas">
+        </canvas>
+    </div>
+</div>
+
+@code {
+    private HubConnection hubConnection;
+
+    ElementReference canvas;
+    Canvas2DContext canvasContext;
+
+    protected override void OnParametersSet()
+    {
+        canvasContext = new Canvas2DContext(JsRuntime, canvas);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/doodleHub"))
+            .Build();
+
+        this.hubConnection.On<Payload>("ReceivePayload", async (payload) =>
+        {
+            await this.canvasContext.DrawLine(payload);
+            StateHasChanged();
+        });
+
+        await this.hubConnection.StartAsync();
+    }
+
+    public bool IsConnected => this.hubConnection.State == HubConnectionState.Connected;
+
+    private bool draw = false;
+    private double x;
+    private double y;
+
+    private void OnMouseDown(MouseEventArgs eventArgs)
+    {
+        this.draw = true;
+        this.x = eventArgs.ClientX;
+        this.y = eventArgs.ClientY;
+    } 
+    private void OnMouseUp(MouseEventArgs eventArgs) => this.draw = false;
+    private void OnMouseOut(MouseEventArgs eventArgs) => this.draw = false;
+
+    private async Task OnMouseMove(MouseEventArgs eventArgs)
+    {
+        if(draw)
+        {
+            Payload payload = new Payload 
+            { 
+                StartX = this.x, 
+                EndX = eventArgs.ClientX,
+                StartY = this.y,
+                EndY = eventArgs.ClientY
+            };
+
+            await this.canvasContext.DrawLine(payload);
+            
+            this.x = eventArgs.ClientX;
+            this.y = eventArgs.ClientY;
+
+            await this.hubConnection.SendAsync("SendPayload", payload);
+        }
+
+        await Task.CompletedTask;        
+    }
+}
