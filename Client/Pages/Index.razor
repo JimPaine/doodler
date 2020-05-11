@@ -63,6 +63,12 @@
             StateHasChanged();
         });
 
+        this.hubConnection.On("ClearCanvas", async () =>
+        {
+            await this.canvasInterop.Clear();
+            StateHasChanged();
+        });
+
         await this.hubConnection.StartAsync();
     }
 
@@ -86,7 +92,7 @@
 
     private async Task OnClear(EventArgs eventArgs)
     {
-        await this.canvasInterop.Clear();
+        await this.hubConnection.SendAsync("ClearCanvas"); 
     }
 
     private async Task OnMouseDown(MouseEventArgs eventArgs)
